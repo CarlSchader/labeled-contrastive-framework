@@ -1,4 +1,5 @@
 from torchvision import transforms
+from transformers import AutoImageProcessor
 
 class GaussianBlur(object):
     def __init__(self, p=0.5, radius_min=0.1, radius_max=2.):
@@ -48,4 +49,41 @@ def make_transform(
 
     transform = transforms.Compose(transform_list)
     return transform
+
+def make_eval_transform(
+    crop_size=224,
+    normalization=((0.485, 0.456, 0.406),
+                   (0.229, 0.224, 0.225))
+):
+    transform = transforms.Compose([
+        transforms.Resize((crop_size, crop_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(normalization[0], normalization[1])
+    ])
+    return transform
+
+# imageProcessor = AutoImageProcessor.from_pretrained("facebook/dinov2-small")
+#
+# def make_eval_transform(
+#     crop_size=224,
+#     normalization=((0.485, 0.456, 0.406),
+#                    (0.229, 0.224, 0.225))
+# ):
+#
+#     return transforms.Lambda(lambda x: imageProcessor(x, return_tensors='pt').pixel_values.reshape(3, 224, 224))
+#     
+
+if __name__ == '__main__':
+    import torch, argparse
+    from PIL import Image
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--image', type=str, required=True)
+
+    args = parser.parse_args()
+
+    test_input = Image.open(args.image)
+
+    transform = make_eval_transform()
+    print(transform(test_input).shape)
 

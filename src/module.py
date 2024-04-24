@@ -20,6 +20,13 @@ def arcface_loss(embeddings, targets, centers, m=0.5, s=64.0):
     margin_distances = s*torch.cos(angles)
     return cross_entropy(margin_distances, targets)
 
+class SphereNormalization(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, X):
+        return torch.nn.functional.normalize(X, p=2, dim=1)
+
 class LabeledContrastiveEncoder(L.LightningModule):
     def __init__(
             self, 
