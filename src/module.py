@@ -98,7 +98,7 @@ if __name__ == '__main__':
     import time, argparse
     from torchvision import datasets
     from transform import make_transform
-    from lightning.pytorch.callbacks import ModelCheckpoint
+    from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 
     # from transformers import Dinov2Model
 
@@ -144,6 +144,8 @@ if __name__ == '__main__':
         save_top_k=1,
         filename='arcface-{epoch:02d}-{val_loss:.2f}',
     )
+
+    lr_monitor = LearningRateMonitor(logging_interval='step')
 
     print('initializing trainer')
     trainer = L.Trainer(max_epochs=epochs, callbacks=[checkpoint_callback])
