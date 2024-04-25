@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "labeled_contrastive_framework"
-version = "0.1.0"
+version = "0.2.2"
 authors = [
   { name="Carl Schader", email="carlschader@gmail.com" },
 ]
@@ -23,12 +23,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/carlschader/ssl_framework"
-Issues = "https://github.com/carlschader/ssl_framework/issues"
+Homepage = "https://github.com/carlschader/labeled-contrastive-framework"
+Issues = "https://github.com/carlschader/labeled-contrastive-framework/issues"
 
 [tool.setuptools.packages.find]
 # All the following settings are optional:
 where = ["."]  # ["."] by default
-include = ["src/*"]  # ["*"] by default
+include = ["labeled_contrastive_framework"]  # ["*"] by default
 exclude = ["scripts"]  # empty by default
 
