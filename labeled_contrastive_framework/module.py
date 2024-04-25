@@ -5,7 +5,7 @@
 import torch, multiprocessing
 import torch.nn as nn
 import torch.nn.functional as F
-import lightning as L
+import pytorch_lightning as L
 from torch import optim
 from fiblat import sphere_lattice
 

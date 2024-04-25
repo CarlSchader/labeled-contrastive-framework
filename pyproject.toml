@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "labeled_contrastive_framework"
-version = "0.2.2"
+version = "0.2.5"
 authors = [
   { name="Carl Schader", email="carlschader@gmail.com" },
 ]
@@ -20,6 +20,7 @@ dependencies = [
     "torch >= 2.0.0",
     "torchvision >= 0.17.0",
     "pytorch-lightning >= 2.2.0",
+    "fiblat >= 0.5.0",
 ]
 
 [project.urls]
@@ -29,6 +30,6 @@ Issues = "https://github.com/carlschader/labeled-contrastive-framework/issues"
 [tool.setuptools.packages.find]
 # All the following settings are optional:
 where = ["."]  # ["."] by default
-include = ["labeled_contrastive_framework"]  # ["*"] by default
+include = ["*"]  # ["*"] by default
 exclude = ["scripts"]  # empty by default
 
