@@ -1,5 +1,5 @@
 import torch, argparse, os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'labeled_contrastive_framework'))
 from PIL import Image
 from module import *
 from transform import make_eval_transform

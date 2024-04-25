@@ -1,6 +1,7 @@
 # import lightning as L
 import torch, os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'labeled_contrastive_framework'))
 
 from transform import make_eval_transform
 from carlschader_ml_utils.image_utils import embed_image_folder
