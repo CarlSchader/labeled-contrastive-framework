@@ -166,3 +166,5 @@ embeddings/*
 lightning_logs/*
 *.ckpt
 checkpoint_backups/*
+centers.json
+classes.json
