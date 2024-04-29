@@ -111,61 +111,49 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
             self, 
             teacher_encoder,
             student_encoder,
-            teacher_centers,
-            class_centers, # class_centers could be the fibonnaci centers of the teacher or the class averages. Either way, they should be L2 normalized.
+            class_averages, # class_centers should be the un-normalized teacher features across classes
+            embedding_dim=128,
+            kd_loss_weight=1.0,
+            nd_loss_weight=2.0,
+            margin=0.5,
+            scale=64.0,
             learning_rate=1e-4,
             weight_decay=0.01,
         ):
+        
+        self.class_unit_averages = F.normalize(class_averages, p=2, dim=1)
+        self.centers = torch.tensor(sphere_lattice(embedding_dim, num_classes), dtype=torch.float32)
+        self.kd_loss_weight = kd_loss_weight
+        self.nd_loss_weight = nd_loss_weight
+        self.margin = margin
+        self.scale = scale
+    
+        def combined_kd_loss(zs, zt, qs, qt, y):
+            kd_loss = F.mse_loss(qs, qt)
+            class_counts = torch.bincount(y)
+            
+            qs_norm = qs.norm(p=2, dim=1)
+            qt_norm = qt.norm(p=2, dim=1)
+            max_norms = torch.stack([qs_norm, qt_norm]).max(dim=0)[0]
+            nd_loss = (qs * self.class_unit_averages[y]).sum(dim=1)
+            nd_loss = nd_loss / max_norms
+            nd_loss = nd_loss / class_counts[y]
+            nd_loss = nd_loss.sum()
+            nd_loss = -nd_loss / torch.count_nonzero(class_counts)
+            return self.kd_loss_weight * kd_loss + self.nd_loss_weight * nd_loss
+
         super().__init__(
             teacher_encoder=teacher_encoder,
             student_encoder=student_encoder,
-            task_loss_fn=arcface_loss,
-            teacher_head=teacher_head,
-            student_head=student_head,
-            kd_loss_fn=kd_loss_fn,
+            task_loss_fn=lambda zs, zt, qs, qt, y: arcface_loss(qs, y, self.centers, self.margin, self.scale),
+            teacher_head=nn.Identity(),
+            student_head=nn.Identity(),
+            kd_loss_fn=combined_kd_loss,
             learning_rate=learning_rate,
             weight_decay=weight_decay,
         )
-        self.centers = class_centers
 
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        with torch.no_grad():
-            zt = self.teacher_encoder(x)
-            qt = self.teacher_head(zt)
-        zs = self.student_encoder(x)
-        qs = self.student_head(zs)
-        loss = self.task_loss_fn(zs, zt, qs, qt, y) + self.kd_loss_fn(zs, zt, qs, qt, y)
-        self.log('train_loss', loss, prog_bar=True)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        with torch.no_grad():
-            zt = self.teacher_encoder(x)
-            qt = self.teacher_head(zt)
-        zs = self.student_encoder(x)
-        qs = self.student_head(zs)
-        loss = self.task_loss_fn(zs, zt, qs, qt, y) + self.kd_loss_fn(zs, zt, qs, qt, y)
-        self.log('val_loss', loss, prog_bar=True)
-        return loss
-
-    def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
-        # scheduler = optim.lr_scheduler.SequentialLR(optimizer, schedulers=[
-        #     optim.lr_scheduler.LinearLR(optimizer, 0.33, 1.0, total_iters=5),
-        #     optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5),
-        # ],
-        # milestones=[1])
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, factor=0.5)
-        return {
-            'optimizer': optimizer,
-            'lr_scheduler': {
-                'scheduler': scheduler,
-                "monitor": "val_loss",
-            }
-        }
-
+        self.save_hyperparameters(ignore=['teacher_encoder', 'student_encoder', 'class_averages'])
 
 if __name__ == '__main__':
     import time, argparse
