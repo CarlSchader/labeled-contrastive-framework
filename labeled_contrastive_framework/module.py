@@ -122,7 +122,7 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
         ):
         
         self.class_unit_averages = F.normalize(class_averages, p=2, dim=1)
-        self.centers = torch.tensor(sphere_lattice(embedding_dim, num_classes), dtype=torch.float32)
+        self.centers = torch.tensor(sphere_lattice(embedding_dim, len(class_averages)), dtype=torch.float32)
         self.kd_loss_weight = kd_loss_weight
         self.nd_loss_weight = nd_loss_weight
         self.margin = margin
@@ -154,6 +154,12 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
         )
 
         self.save_hyperparameters(ignore=['teacher_encoder', 'student_encoder', 'class_averages'])
+
+    def on_fit_start(self):
+        self.centers = self.centers.to(self.device)
+        self.class_unit_averages = self.class_unit_averages.to(self.device)
+
+
 
 if __name__ == '__main__':
     import time, argparse
