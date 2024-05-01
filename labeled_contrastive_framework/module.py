@@ -111,8 +111,7 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
             self, 
             teacher_encoder,
             student_encoder,
-            class_averages, # class_centers should be the un-normalized teacher features across classes
-            embedding_dim=128,
+            centers, # fibonnaci centers
             kd_loss_weight=1.0,
             nd_loss_weight=2.0,
             margin=0.5,
@@ -121,21 +120,20 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
             weight_decay=0.01,
         ):
         
-        self.class_unit_averages = F.normalize(class_averages, p=2, dim=1)
-        self.centers = torch.tensor(sphere_lattice(embedding_dim, len(class_averages)), dtype=torch.float32)
+        self.centers = centers
         self.kd_loss_weight = kd_loss_weight
         self.nd_loss_weight = nd_loss_weight
         self.margin = margin
         self.scale = scale
     
         def combined_kd_loss(zs, zt, qs, qt, y):
-            kd_loss = F.mse_loss(qs, qt)
+            kd_loss = (qs - qt).norm(p=2, dim=1).mean()
+
             class_counts = torch.bincount(y)
-            
             qs_norm = qs.norm(p=2, dim=1)
             qt_norm = qt.norm(p=2, dim=1)
             max_norms = torch.stack([qs_norm, qt_norm]).max(dim=0)[0]
-            nd_loss = (qs * self.class_unit_averages[y]).sum(dim=1)
+            nd_loss = (qs * self.centers[y]).sum(dim=1)
             nd_loss = nd_loss / max_norms
             nd_loss = nd_loss / class_counts[y]
             nd_loss = nd_loss.sum()
@@ -153,12 +151,10 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
             weight_decay=weight_decay,
         )
 
-        self.save_hyperparameters(ignore=['teacher_encoder', 'student_encoder', 'class_averages'])
+        self.save_hyperparameters(ignore=['teacher_encoder', 'student_encoder'])
 
     def on_fit_start(self):
         self.centers = self.centers.to(self.device)
-        self.class_unit_averages = self.class_unit_averages.to(self.device)
-
 
 
 if __name__ == '__main__':
