@@ -5,9 +5,11 @@
 import torch, multiprocessing
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader, random_split
 import pytorch_lightning as L
 from torch import optim
 from fiblat import sphere_lattice
+from knowledge_distillation_framework import KnowledgeDistillationModule
 
 
 # cross_entropy = nn.CrossEntropyLoss()
@@ -95,9 +97,6 @@ class LabeledContrastiveEncoder(L.LightningModule):
             }
         }
 
-import sys
-sys.path.append('/home/carl/programming/knowledge-distillation-framework/')
-from knowledge_distillation_framework import KnowledgeDistillationModule
 
 class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
     '''
@@ -191,10 +190,10 @@ if __name__ == '__main__':
     valid_set_size = len(dataset) - train_set_size
 
     seed = torch.Generator().manual_seed(42)
-    train_set, valid_set = torch.utils.data.random_split(dataset, [train_set_size, valid_set_size], generator=seed)
+    train_set, valid_set = random_split(dataset, [train_set_size, valid_set_size], generator=seed)
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=dataloader_workers)
-    valid_loader = torch.utils.data.DataLoader(valid_set, batch_size=batch_size, shuffle=False, num_workers=dataloader_workers)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=dataloader_workers)
+    valid_loader = DataLoader(valid_set, batch_size=batch_size, shuffle=False, num_workers=dataloader_workers)
 
     print('loading backbone')
     # backbone = Dinov2Model.from_pretrained("facebook/dinov2-base").base_model
