@@ -1,4 +1,4 @@
-import time, argparse, sys, os, torch, multiprocessing
+import time, argparse, sys, os, torch, multiprocessing, torchvision
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import torch.nn as nn
@@ -13,10 +13,18 @@ from transformers import  MobileViTV2Model, MobileViTV2Config
 class StudentEncoder(nn.Module):
         def __init__(self, out_dim):
             super(StudentEncoder, self).__init__()
-            configuration = MobileViTV2Config()
-            backbone_out_dim = 512
-            configuration.return_dict = False
-            self.backbone = MobileViTV2Model(configuration)
+            # configuration = MobileViTV2Config()
+            # configuration.return_dict = False
+            # self.backbone = MobileViTV2Model(configuration)
+            # backbone_out_dim = 512
+
+            self.backbone = torchvision.models.mobilenet_v3_large(weights=torchvision.models.MobileNet_V3_Large_Weights.DEFAULT)
+            backbone_out_dim = 1000
+
+
+            # self.backbone = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg')
+            # backbone_out_dim = 384
+
             self.head = nn.Sequential( # add an embedding head
                 nn.Linear(backbone_out_dim, out_dim),
                 nn.ReLU(),
@@ -24,7 +32,8 @@ class StudentEncoder(nn.Module):
             )
 
         def forward(self, x):
-            x = self.backbone(x)[1]
+            # x = self.backbone(x)[1]
+            x = self.backbone(x)
             x = self.head(x)
             return x
 
@@ -37,6 +46,10 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dataset_path', required=True, type=str, help='Path to the image dataset')
     parser.add_argument('-b', '--batch_size', type=int, default=128)
     parser.add_argument('-e', '--epochs', type=int, default=100)
+    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--task_loss_weight', type=float, default=1.0)
+    parser.add_argument('--kd_loss_weight', type=float, default=1.0)
+    parser.add_argument('--nd_loss_weight', type=float, default=1.0)
     parser.add_argument('--embedding_dim', type=int, default=128)
     args = parser.parse_args()
 
@@ -69,9 +82,18 @@ if __name__ == '__main__':
     teacher_encoder = teacher_module.encoder
     centers = teacher_module.centers
 
+    print('initializing student')
     student_encoder = StudentEncoder(embedding_dim)
 
-    lightning_module = LabeledContrastiveDistillationModule(teacher_encoder, student_encoder, centers)
+    lightning_module = LabeledContrastiveDistillationModule(
+        teacher_encoder, 
+        student_encoder, 
+        centers,
+        task_loss_weight=args.task_loss_weight,
+        kd_loss_weight=args.kd_loss_weight,
+        nd_loss_weight=args.nd_loss_weight,
+        learning_rate=args.learning_rate,
+    )
 
     checkpoint_callback = ModelCheckpoint(
         monitor='val_loss',

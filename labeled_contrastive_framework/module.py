@@ -112,8 +112,9 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
             teacher_encoder,
             student_encoder,
             centers, # fibonnaci centers
-            kd_loss_weight=1.0,
-            nd_loss_weight=2.0,
+            task_loss_weight=1.0,
+            kd_loss_weight=2.0,
+            nd_loss_weight=4.0,
             margin=0.5,
             scale=64.0,
             learning_rate=1e-4,
@@ -121,6 +122,7 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
         ):
         
         self.centers = centers
+        self.task_loss_weight = task_loss_weight
         self.kd_loss_weight = kd_loss_weight
         self.nd_loss_weight = nd_loss_weight
         self.margin = margin
@@ -140,10 +142,12 @@ class LabeledContrastiveDistillationModule(KnowledgeDistillationModule):
             nd_loss = -nd_loss / torch.count_nonzero(class_counts)
             return self.kd_loss_weight * kd_loss + self.nd_loss_weight * nd_loss
 
+            # return self.kd_loss_weight * kd_loss
+
         super().__init__(
             teacher_encoder=teacher_encoder,
             student_encoder=student_encoder,
-            task_loss_fn=lambda zs, zt, qs, qt, y: arcface_loss(qs, y, self.centers, self.margin, self.scale),
+            task_loss_fn=lambda zs, zt, qs, qt, y: self.task_loss_weight*arcface_loss(qs, y, self.centers, self.margin, self.scale),
             teacher_head=nn.Identity(),
             student_head=nn.Identity(),
             kd_loss_fn=combined_kd_loss,
@@ -161,7 +165,7 @@ if __name__ == '__main__':
     import time, argparse
     from torchvision import datasets
     from transform import make_transform
-    from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
+    from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 
     # from transformers import Dinov2Model
 
