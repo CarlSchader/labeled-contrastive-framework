@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "labeled_contrastive_framework"
-version = "0.2.6"
+version = "0.2.7"
 authors = [
   { name="Carl Schader", email="carlschader@gmail.com" },
 ]
@@ -21,6 +21,7 @@ dependencies = [
     "torchvision >= 0.17.0",
     "pytorch-lightning >= 2.2.0",
     "fiblat >= 0.5.0",
+    "knowledge-distillation-framework >= 0.1.1"
 ]
 
 [project.urls]
