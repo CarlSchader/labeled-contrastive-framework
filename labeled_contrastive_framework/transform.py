@@ -1,5 +1,5 @@
 from torchvision import transforms
-from transformers import AutoImageProcessor
+# from transformers import AutoImageProcessor
 
 class GaussianBlur(object):
     def __init__(self, p=0.5, radius_min=0.1, radius_max=2.):
