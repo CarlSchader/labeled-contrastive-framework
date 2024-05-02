@@ -55,13 +55,15 @@ def make_transform(
 def make_eval_transform(
     crop_size=224,
     normalization=((0.485, 0.456, 0.406),
-                   (0.229, 0.224, 0.225))
+                   (0.229, 0.224, 0.225)),
+    is_tensor=False,
 ):
-    transform = transforms.Compose([
-        transforms.Resize((crop_size, crop_size)),
-        transforms.ToTensor(),
-        transforms.Normalize(normalization[0], normalization[1])
-    ])
+    transform_list = []
+    transform_list += [transforms.Resize((crop_size, crop_size))]
+    if is_tensor:
+        transform_list += [transforms.ToTensor()]
+    transform_list += [transforms.Normalize(normalization[0], normalization[1])]
+    transform = transforms.Compose(transform_list)
     return transform
 
 # imageProcessor = AutoImageProcessor.from_pretrained("facebook/dinov2-small")
